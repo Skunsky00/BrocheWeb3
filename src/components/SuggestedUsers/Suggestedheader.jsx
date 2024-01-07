@@ -3,7 +3,7 @@ import useLogout from "../../hooks/useLogout";
 import useAuthStore from "../../store/authStore";
 import { Link } from "react-router-dom";
 
-const Suggestedheader = () => {
+const SuggestedHeader = () => {
   const { handleLogout, isLoggingOut } = useLogout();
   const authUser = useAuthStore((state) => state.user);
 
@@ -38,4 +38,4 @@ const Suggestedheader = () => {
   );
 };
 
-export default Suggestedheader;
+export default SuggestedHeader;

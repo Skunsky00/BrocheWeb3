@@ -2,7 +2,7 @@ import { Box, Flex, Link, Text, VStack } from "@chakra-ui/react";
 
 import SuggestedUser from "./SuggestedUser";
 import useGetSuggestedUsers from "../../hooks/useGetSuggestedUser";
-import Suggestedheader from "./SuggestedHeader";
+import SuggestedHeader from "./SuggestedHeader";
 
 const SuggestedUsers = () => {
   const { isLoading, suggestedUsers } = useGetSuggestedUsers();
@@ -12,7 +12,7 @@ const SuggestedUsers = () => {
 
   return (
     <VStack py={8} px={6} gap={4}>
-      <Suggestedheader />
+      <SuggestedHeader />
 
       {suggestedUsers.length !== 0 && (
         <Flex alignItems={"center"} justifyContent={"space-between"} w={"full"}>
