@@ -1,8 +1,7 @@
 import { Box, Flex, Link, Text, VStack } from "@chakra-ui/react";
-
 import SuggestedUser from "./SuggestedUser";
 import useGetSuggestedUsers from "../../hooks/useGetSuggestedUser";
-import SuggestedHeader from "./SuggestedHeader.jsx";
+import SuggestedHeader from "./SuggestedHeader";
 
 const SuggestedUsers = () => {
   const { isLoading, suggestedUsers } = useGetSuggestedUsers();
