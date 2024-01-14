@@ -21,7 +21,36 @@ const PostHeader = ({ post, creatorProfile }) => {
       w={"full"}
       my={2}
     >
+      <Box cursor={"pointer"}>
+        <Button
+          size={"xs"}
+          bg={"transparent"}
+          fontSize={12}
+          color={"white"}
+          fontWeight={"bold"}
+          _hover={{
+            color: "blue.500",
+          }}
+          transition={"0.2s ease-in-out"}
+          onClick={handleFollowUser}
+          isLoading={isUpdating}
+        >
+          {post.location}
+        </Button>
+      </Box>
+
       <Flex alignItems={"center"} gap={2}>
+        <Flex fontSize={12} fontWeight={"bold"} gap="2">
+          <Box color={"gray.500"}>{timeAgo(post.timestamp.toMillis())} • </Box>
+          {creatorProfile ? (
+            <Link to={`/${creatorProfile.username}`}>
+              {creatorProfile.username}
+            </Link>
+          ) : (
+            <Skeleton w={"100px"} h={"10px"} />
+          )}
+        </Flex>
+
         {creatorProfile ? (
           <Link to={`/${creatorProfile.username}`}>
             <Avatar
@@ -33,34 +62,7 @@ const PostHeader = ({ post, creatorProfile }) => {
         ) : (
           <SkeletonCircle size="10" />
         )}
-        <Flex fontSize={12} fontWeight={"bold"} gap="2">
-          {creatorProfile ? (
-            <Link to={`/${creatorProfile.username}`}>
-              {creatorProfile.username}
-            </Link>
-          ) : (
-            <Skeleton w={"100px"} h={"10px"} />
-          )}
-          <Box color={"gray.500"}>• {timeAgo(post.timestamp.toMillis())}</Box>
-        </Flex>
       </Flex>
-      <Box cursor={"pointer"}>
-        <Button
-          size={"xs"}
-          bg={"transparent"}
-          fontSize={12}
-          color={"blue.500"}
-          fontWeight={"bold"}
-          _hover={{
-            color: "white",
-          }}
-          transition={"0.2s ease-in-out"}
-          onClick={handleFollowUser}
-          isLoading={isUpdating}
-        >
-          {isFollowing ? "Unfollow" : "Follow"}
-        </Button>
-      </Box>
     </Flex>
   );
 };

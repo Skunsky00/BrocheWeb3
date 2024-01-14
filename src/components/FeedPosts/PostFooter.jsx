@@ -52,9 +52,19 @@ const PostFooter = ({ post, isProfilePage, creatorProfile }) => {
           <CommentLogo />
         </Box>
       </Flex>
-      <Text fontWeight={600} fontSize={"sm"}>
-        {post.likes ?? 0} likes
-      </Text>
+      <Flex
+        alignItems={"center"}
+        justifyContent={"space-between"}
+        w={"full"}
+        my={2}
+      >
+        <Text fontWeight={600} fontSize={"sm"}>
+          {post.likes ?? 0} likes
+        </Text>
+        <Text fontWeight={600} fontSize={"sm"}>
+          {post.label}
+        </Text>
+      </Flex>
 
       {isProfilePage && (
         <Text fontSize="12" color={"gray"}>
