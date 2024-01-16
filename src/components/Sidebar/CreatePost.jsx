@@ -168,32 +168,45 @@ function useCreatePost() {
   const handleCreatePost = async (selectedFile, caption, location, label) => {
     if (isLoading || !authUser) return;
     if (!selectedFile) throw new Error("Please select an image");
+
     setIsLoading(true);
-    const newPost = {
-      caption: caption,
-      location: location,
-      label: label,
-      likes: 0,
-      bookmarks: 0,
-      comments: 0,
-      timestamp: new Date(),
-      ownerUid: authUser.id,
-    };
 
     try {
-      const postDocRef = await addDoc(collection(firestore, "posts"), newPost);
-      const userDocRef = doc(firestore, "users", authUser.id);
+      const postCollectionRef = collection(firestore, "posts");
+
+      // Create a new post document without ID
+      const newPost = {
+        caption: caption,
+        location: location,
+        label: label,
+        likes: 0,
+        comments: 0,
+        timestamp: new Date(),
+        ownerUid: authUser.id,
+      };
+
+      // Add the new post document to the collection and get the auto-generated ID
+      const postDocRef = await addDoc(postCollectionRef, newPost);
+      const postId = postDocRef.id;
 
       // Adjust storage paths based on the file type
       const mediaPath = selectedFile.startsWith("data:image")
         ? "images"
         : "videos";
-      const mediaRef = ref(storage, `${mediaPath}/${postDocRef.id}`);
+      const mediaRef = ref(storage, `${mediaPath}/${postId}`);
 
-      await updateDoc(userDocRef, { posts: arrayUnion(postDocRef.id) });
+      // Update the post document with the generated ID
+      await updateDoc(postDocRef, { id: postId });
+
+      // Update the user document with the new post ID
+      const userDocRef = doc(firestore, "users", authUser.id);
+      await updateDoc(userDocRef, { posts: arrayUnion(postId) });
+
+      // Upload media to storage
       await uploadString(mediaRef, selectedFile, "data_url");
       const downloadURL = await getDownloadURL(mediaRef);
 
+      // Update the post document with media URL
       if (selectedFile.startsWith("data:image")) {
         newPost.imageUrl = downloadURL;
       } else {
@@ -219,15 +232,9 @@ function useCreatePost() {
       console.log("Download URL:", downloadURL);
       console.log("newPost:", newPost);
 
-      // Adjust the field name based on the file type
-      // newPost[selectedFile.startsWith("data:image") ? "imageUrl" : "videoUrl"] =
-      //   downloadURL;
-
-      if (userProfile?.id === authUser.id)
-        createPost({ ...newPost, id: postDocRef.id });
-
-      // if (pathname !== "/" && userProfile.id === authUser.id)
-      //   addPost({ ...newPost, id: postDocRef.id });
+      if (userProfile?.id === authUser.id) {
+        createPost({ ...newPost, id: postId });
+      }
 
       showToast("Success", "Post created successfully", "success");
     } catch (error) {
