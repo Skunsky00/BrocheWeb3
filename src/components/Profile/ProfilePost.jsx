@@ -211,7 +211,7 @@ const ProfilePost = ({ post }) => {
                     </Text>
                   </Flex>
 
-                  {authUser?.uid === userProfile.uid && (
+                  {authUser?.id === userProfile.id && (
                     <Button
                       size={"sm"}
                       bg={"transparent"}
