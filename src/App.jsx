@@ -3,6 +3,7 @@ import AuthPage from "./pages/AuthPage/AuthPage";
 import HomePage from "./pages/HomePage/HomePage";
 import PageLayout from "./Layouts/PageLayout/PageLayout";
 import ProfilePage from "./pages/ProfilePage/ProfilePage";
+import PostPage from "./pages/PostPage/PostPage";
 import { auth } from "./firebase/firebase";
 import { useAuthState } from "react-firebase-hooks/auth";
 
@@ -20,6 +21,7 @@ function App() {
           element={!authUser ? <AuthPage /> : <Navigate to="/" />}
         />
         <Route path="/:username" element={<ProfilePage />} />
+        <Route path="/p/:postId" element={<PostPage />} />
       </Routes>
     </PageLayout>
   );
