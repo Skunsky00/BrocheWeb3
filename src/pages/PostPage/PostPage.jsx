@@ -1,7 +1,7 @@
 import { useParams, useNavigate } from "react-router-dom";
 import { useEffect, useState } from "react";
 import { firestore } from "../../firebase/firebase";
-import { doc, getDoc } from "firebase/firestore";
+import { doc, getDoc, collection, getDocs } from "firebase/firestore";
 import {
   Modal,
   ModalOverlay,
@@ -13,14 +13,21 @@ import {
   Image,
   Text,
   Box,
+  Avatar,
+  Divider,
+  VStack,
 } from "@chakra-ui/react";
 import ReactPlayer from "react-player";
+import Comment from "../../components/Comments/Comment"; // Import your Comment component
+import CaptionPost from "../../components/Comments/CaptionPost";
 
 const PostPage = () => {
   const { postId } = useParams();
   const navigate = useNavigate();
   const { isOpen, onOpen, onClose } = useDisclosure();
   const [post, setPost] = useState(null);
+  const [user, setUser] = useState(null); // To hold user data
+  const [comments, setComments] = useState([]); // To hold comments
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
@@ -32,7 +39,30 @@ const PostPage = () => {
         const postRef = doc(firestore, "posts", postId);
         const postSnap = await getDoc(postRef);
         if (postSnap.exists()) {
-          setPost(postSnap.data());
+          const postData = postSnap.data();
+          setPost(postData);
+
+          // Fetch user data based on ownerUid
+          const userRef = doc(firestore, "users", postData.ownerUid);
+          const userSnap = await getDoc(userRef);
+          if (userSnap.exists()) {
+            setUser(userSnap.data());
+          } else {
+            console.error("User not found");
+          }
+
+          // Fetch comments for the post
+          const commentsCollection = collection(
+            firestore,
+            `posts/${postId}/post-comments`
+          );
+          const commentsSnapshot = await getDocs(commentsCollection);
+          const commentsData = commentsSnapshot.docs.map((doc) => ({
+            id: doc.id,
+            ...doc.data(),
+          }));
+          setComments(commentsData);
+
           onOpen(); // Open modal when post is loaded
         } else {
           console.error("Post not found");
@@ -52,7 +82,7 @@ const PostPage = () => {
   if (!post) return <Text>Post not found</Text>;
 
   return (
-    <Modal isOpen={isOpen} onClose={() => navigate("/")} size="full">
+    <Modal isOpen={isOpen} onClose={onClose} size="full">
       <ModalOverlay />
       <ModalContent bg="blackAlpha.900">
         <ModalCloseButton color="white" />
@@ -62,11 +92,7 @@ const PostPage = () => {
           alignItems="center"
           height="100vh"
         >
-          <Flex
-            width="100%"
-            height="100vh"
-            flexDirection={["column", "row"]} // Stack vertically on small screens, horizontally on large
-          >
+          <Flex width="100%" height="100vh" flexDirection={["column", "row"]}>
             {/* Video/Image Section */}
             <Box
               flex="3"
@@ -92,7 +118,7 @@ const PostPage = () => {
               )}
             </Box>
 
-            {/* Caption Section */}
+            {/* User Info and Caption Section */}
             <Box
               flex="1"
               p={5}
@@ -100,21 +126,82 @@ const PostPage = () => {
               overflowY="auto"
               maxW="25%"
               textAlign="left"
-              display={["none", "block"]} // Hide on small screens
-              ml={4} // Add margin on larger screens
+              display={["none", "block"]}
+              ml={4}
             >
-              <Text fontSize="lg">{post.caption}</Text>
+              {user && (
+                <Flex alignItems="center" mb={2}>
+                  <Avatar
+                    src={user.profileImageUrl}
+                    size="sm"
+                    name={user.username}
+                  />
+                  <Text fontWeight="bold" ml={2}>
+                    {user.username}
+                  </Text>
+                </Flex>
+              )}
+              <Divider my={2} bg="gray.500" />
+
+              {/* Comments Section */}
+              <VStack
+                alignItems="start"
+                spacing={2}
+                mt={4}
+                maxH="300px"
+                overflowY="auto"
+              >
+                <CaptionPost post={post} />{" "}
+                {/* Display caption above comments */}
+                {comments.length > 0 ? (
+                  comments.map((comment) => (
+                    <Comment key={comment.id} comment={comment} />
+                  ))
+                ) : (
+                  <Text>No comments yet.</Text>
+                )}
+              </VStack>
             </Box>
 
             {/* Caption for smaller screens */}
             <Box
-              display={["block", "none"]} // Show on small screens only
+              display={["block", "none"]}
               p={5}
               color="white"
               overflowY="auto"
               textAlign="left"
             >
+              {user && (
+                <Flex alignItems="center" mb={2}>
+                  <Avatar
+                    src={user.profileImageUrl}
+                    size="sm"
+                    name={user.username}
+                  />
+                  <Text fontWeight="bold" ml={2}>
+                    {user.username}
+                  </Text>
+                </Flex>
+              )}
+              <Divider my={2} bg="gray.500" />
               <Text fontSize="lg">{post.caption}</Text>
+
+              {/* Comments Section */}
+              <VStack
+                alignItems="start"
+                spacing={2}
+                mt={4}
+                maxH="300px"
+                overflowY="auto"
+              >
+                {comments.length > 0 ? (
+                  comments.map((comment) => (
+                    <Comment key={comment.id} comment={comment} />
+                  ))
+                ) : (
+                  <Text>No comments yet.</Text>
+                )}
+              </VStack>
             </Box>
           </Flex>
         </ModalBody>

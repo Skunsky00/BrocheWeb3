@@ -42,11 +42,15 @@ const ProfilePost = ({ post }) => {
   const { isOpen, onOpen, onClose } = useDisclosure();
   const userProfile = useUserProfileStore((state) => state.userProfile);
   const authUser = useAuthStore((state) => state.user);
-  const thumbnailUrl = useThumbnailGenerator(post.videoUrl);
   const showToast = useShowToast();
-  const [isDeleting, setIsDeleting] = useState(false);
   const deletePost = usePostStore((state) => state.deletePost);
+  const [isDeleting, setIsDeleting] = useState(false);
   const [comments, setComments] = useState([]);
+
+  // Generate a thumbnail only if the post has a video
+  const generatedThumbnail = useThumbnailGenerator(post.videoUrl);
+  const thumbnailUrl =
+    generatedThumbnail || post.imageUrl || "/default-thumbnail.png";
 
   useEffect(() => {
     const fetchComments = async () => {
@@ -70,11 +74,13 @@ const ProfilePost = ({ post }) => {
     if (!window.confirm("Are you sure you want to delete this post?")) return;
     if (isDeleting) return;
 
+    setIsDeleting(true);
+
     try {
       const mediaPath = post.videoUrl ? "videos" : "images";
       const mediaRef = ref(storage, `${mediaPath}/${post.id}`);
 
-      // If there is a videoUrl, delete the video; otherwise, delete the image
+      // Delete video or image
       await deleteObject(mediaRef);
 
       const userRef = doc(firestore, "users", authUser.id);
@@ -134,25 +140,34 @@ const ProfilePost = ({ post }) => {
               </Text>
             </Flex>
           </Flex>
+
+          {/* Location Display */}
+          {post.location && (
+            <Text
+              position={"absolute"}
+              bottom={2}
+              right={2}
+              fontSize={16}
+              fontWeight={"bold"}
+              color={"white"}
+              bg={"blackAlpha.600"}
+              px={2}
+              py={1}
+              borderRadius={4}
+            >
+              {post.location}
+            </Text>
+          )}
         </Flex>
-        {post.videoUrl && (
-          <Image
-            src={thumbnailUrl} // Use the thumbnailUrl if available, fallback to imageUrl
-            alt="profile post"
-            w={"100%"}
-            h={"100%"}
-            objectFit={"cover"}
-          />
-        )}
-        {!post.videoUrl && (
-          <Image
-            src={post.imageUrl} // Use the thumbnailUrl if available, fallback to imageUrl
-            alt="profile post"
-            w={"100%"}
-            h={"100%"}
-            objectFit={"cover"}
-          />
-        )}
+
+        {/* Display Thumbnail (Either Generated or Image Fallback) */}
+        <Image
+          src={thumbnailUrl}
+          alt="profile post"
+          w={"100%"}
+          h={"100%"}
+          objectFit={"cover"}
+        />
       </GridItem>
 
       <Modal
@@ -181,15 +196,14 @@ const ProfilePost = ({ post }) => {
                 justifyContent={"center"}
                 alignItems={"center"}
               >
-                {post.videoUrl && (
+                {post.videoUrl ? (
                   <ReactPlayer
                     url={post.videoUrl}
                     width="100%"
                     height="100%"
                     controls
                   />
-                )}
-                {!post.videoUrl && (
+                ) : (
                   <Image src={post.imageUrl} alt="profile post" />
                 )}
               </Flex>
