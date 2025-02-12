@@ -15,7 +15,7 @@ const Caption = ({ post }) => {
         <Avatar src={userProfile.profileImageUrl} size={"sm"} />
       </Link>
       <Flex direction={"column"}>
-        <Flex gap={2} alignItems={"center"}>
+        <Flex gap={2} alignItems={"flex-start"}>
           <Link to={`/${userProfile.username}`}>
             <Text fontWeight={"bold"} fontSize={12}>
               {userProfile.username}

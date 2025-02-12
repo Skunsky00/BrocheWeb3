@@ -1,10 +1,13 @@
 import { Avatar, Flex, Text } from "@chakra-ui/react";
 import { Link } from "react-router-dom";
 import { timeAgo } from "../../utils/timeAgo";
-import useUserProfileStore from "../../store/userProfileStore";
+import useGetUserProfileById from "../../hooks/useGetUserProfileById";
 
 const Caption = ({ post }) => {
-  const userProfile = useUserProfileStore((state) => state.userProfile);
+  const { userProfile, isLoading } = useGetUserProfileById(post.ownerUid);
+
+  if (isLoading) return <Text>Loading caption...</Text>;
+  if (!userProfile) return <Text>Error loading caption</Text>;
 
   return (
     <Flex gap={4}>
@@ -12,7 +15,7 @@ const Caption = ({ post }) => {
         <Avatar src={userProfile.profileImageUrl} size={"sm"} />
       </Link>
       <Flex direction={"column"}>
-        <Flex gap={2} alignItems={"center"}>
+        <Flex gap={2} alignItems={"flex-start"}>
           <Link to={`/${userProfile.username}`}>
             <Text fontWeight={"bold"} fontSize={12}>
               {userProfile.username}

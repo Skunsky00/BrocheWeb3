@@ -130,15 +130,27 @@ const PostPage = () => {
               ml={4}
             >
               {user && (
-                <Flex alignItems="center" mb={2}>
-                  <Avatar
-                    src={user.profileImageUrl}
-                    size="sm"
-                    name={user.username}
-                  />
-                  <Text fontWeight="bold" ml={2}>
-                    {user.username}
-                  </Text>
+                <Flex
+                  alignItems="center"
+                  mb={2}
+                  justifyContent="space-between"
+                  width="100%"
+                >
+                  <Flex alignItems="center">
+                    <Avatar
+                      src={user.profileImageUrl}
+                      size="sm"
+                      name={user.username}
+                    />
+                    <Text fontWeight="bold" ml={2}>
+                      {user.username}
+                    </Text>
+                  </Flex>
+                  {post.location && (
+                    <Text fontSize="sm" color="gray.400" ml="auto">
+                      {post.location}
+                    </Text>
+                  )}
                 </Flex>
               )}
               <Divider my={2} bg="gray.500" />

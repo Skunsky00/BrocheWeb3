@@ -27,6 +27,23 @@ const useLikePost = (postId) => {
   const postStore = usePostStore((state) => state.posts);
   const updatePostStore = usePostStore((state) => state.updatePost);
 
+  useEffect(() => {
+    if (!postId) return;
+
+    const likesCollectionRef = collection(
+      firestore,
+      `posts/${postId}/post-likes`
+    );
+    const unsubscribeLikes = onSnapshot(likesCollectionRef, (snapshot) => {
+      const likesCount = snapshot.size;
+      const currentPost = postStore.find((post) => post.id === postId);
+      if (currentPost) {
+        updatePostStore({ ...currentPost, likes: likesCount });
+      }
+    });
+    return () => unsubscribeLikes();
+  }, [postId]);
+
   const checkIfUserLikedPost = async () => {
     try {
       const userId = authUser?.id;
@@ -65,41 +82,26 @@ const useLikePost = (postId) => {
   }, [authUser, postId]);
 
   const likePost = async () => {
+    if (isUpdating) return;
     setIsUpdating(true);
 
     try {
       const userId = authUser?.id;
+      if (!userId || !postId) return;
 
-      if (userId && postId) {
-        const postRef = doc(firestore, "posts", postId);
+      // Get current likes count
+      const currentPost = postStore.find((post) => post.id === postId);
+      const currentLikes = currentPost?.likes ?? 0;
 
-        onSnapshot(postRef, (doc) => {
-          const currentLikes = doc.data().likes || 0;
-          const updatedPost = {
-            ...postStore.find((post) => post.id === postId),
-            likes: currentLikes + 1,
-          };
-          updatePostStore(updatedPost);
-        });
+      // Optimistically update local state
+      updatePostStore({ ...currentPost, likes: currentLikes + 1 });
 
-        const postLikesCollection = doc(
-          firestore,
-          `posts/${postId}/post-likes`,
-          userId
-        );
-        await setDoc(postLikesCollection, {});
+      // Firestore update
+      const postLikesDoc = doc(firestore, `posts/${postId}/post-likes`, userId);
+      await setDoc(postLikesDoc, {});
 
-        setDidLike(true);
-        updatePostCollection();
-
-        const userLikesCollection = doc(
-          firestore,
-          `users/${userId}/user-likes/${postId}` // Provide the postId directly
-        );
-        await setDoc(userLikesCollection, {
-          /* Add any additional user-like data if needed */
-        });
-      }
+      setDidLike(true);
+      updatePostCollection();
     } catch (error) {
       showToast("Error", error.message, "error");
     } finally {
@@ -108,38 +110,25 @@ const useLikePost = (postId) => {
   };
 
   const unlikePost = async () => {
+    if (isUpdating) return;
     setIsUpdating(true);
 
     try {
       const userId = authUser?.id;
+      if (!userId || !postId) return;
 
-      if (userId && postId) {
-        const postRef = doc(firestore, "posts", postId);
+      // Get current likes count
+      const currentPost = postStore.find((post) => post.id === postId);
+      const currentLikes = currentPost?.likes ?? 0;
 
-        onSnapshot(postRef, (doc) => {
-          const currentLikes = doc.data().likes || 0;
-          const updatedPost = {
-            ...postStore.find((post) => post.id === postId),
-            likes: Math.max(currentLikes - 1, 0),
-          };
-          updatePostStore(updatedPost);
-        });
+      // Optimistically update local state
+      updatePostStore({ ...currentPost, likes: Math.max(currentLikes - 1, 0) });
 
-        const postLikesCollection = doc(
-          firestore,
-          `posts/${postId}/post-likes`,
-          userId
-        );
-        await deleteDoc(postLikesCollection);
+      // Firestore update
+      const postLikesDoc = doc(firestore, `posts/${postId}/post-likes`, userId);
+      await deleteDoc(postLikesDoc);
 
-        setDidLike(false);
-
-        const userLikesCollection = doc(
-          firestore,
-          `users/${userId}/user-likes/${postId}` // Provide the postId directly
-        );
-        await deleteDoc(userLikesCollection);
-      }
+      setDidLike(false);
     } catch (error) {
       showToast("Error", error.message, "error");
     } finally {

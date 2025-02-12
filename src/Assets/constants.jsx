@@ -326,3 +326,70 @@ export const CommentLogo = () => (
     ></path>
   </svg>
 );
+
+export const ShareLogo = () => (
+  <svg
+    aria-label="Share"
+    color="rgb(245, 245, 245)"
+    fill="rgb(245, 245, 245)"
+    height="24"
+    role="img"
+    viewBox="0 0 24 24"
+    width="24"
+  >
+    <title>Share</title>
+    <path
+      d="M22 2L11 13"
+      stroke="currentColor"
+      strokeWidth="2"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      fill="none"
+    ></path>
+    <path
+      d="M22 2L15 22L11 13L2 9L22 2Z"
+      stroke="currentColor"
+      strokeWidth="2"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      fill="none"
+    ></path>
+  </svg>
+);
+
+export const BookmarkLogo = () => (
+  <svg
+    aria-label="Save"
+    color="rgb(245, 245, 245)"
+    fill="rgb(245, 245, 245)"
+    height="24"
+    role="img"
+    viewBox="0 0 24 24"
+    width="24"
+  >
+    <title>Save</title>
+    <path
+      d="M20 21l-8-5-8 5V3h16z"
+      fill="none"
+      stroke="currentColor"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      strokeWidth="2"
+    ></path>
+  </svg>
+);
+
+export const BookmarkedLogo = () => (
+  <svg
+    aria-label="Remove"
+    color="rgb(245, 245, 245)"
+    fill="rgb(245, 245, 245)"
+    height="24"
+    role="img"
+    viewBox="0 0 24 24"
+    width="24"
+  >
+    <title>Unsave</title>
+    <path d="M20 21l-8-5-8 5V3h16z" fill="currentColor"></path>
+  </svg>
+);

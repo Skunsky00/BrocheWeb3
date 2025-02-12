@@ -1,8 +1,15 @@
 import { Box, Flex, Text } from "@chakra-ui/react";
 import { BsBookmark, BsSuitHeart } from "react-icons/bs";
-import { FaMapPin } from "react-icons/fa6";
+import { useState } from "react";
 
-const ProfileTabs = () => {
+const ProfileTabs = ({ activeTab, setActiveTab }) => {
+  const handleTabClick = (tab) => {
+    if (activeTab !== tab) {
+      console.log("Switching to Tab:", tab);
+      setActiveTab(tab);
+    }
+  };
+
   return (
     <Flex
       w={"full"}
@@ -12,7 +19,8 @@ const ProfileTabs = () => {
       fontWeight={"bold"}
     >
       <Flex
-        borderTop={"1px solid white"}
+        onClick={() => handleTabClick("liked")}
+        borderTop={activeTab === "liked" ? "2px solid white" : "none"}
         alignItems={"center"}
         p="3"
         gap={1}
@@ -22,25 +30,23 @@ const ProfileTabs = () => {
           <BsSuitHeart />
         </Box>
         <Text fontSize={12} display={{ base: "none", sm: "block" }}>
-          Posts
+          Liked
         </Text>
       </Flex>
 
-      <Flex alignItems={"center"} p="3" gap={1} cursor={"pointer"}>
+      <Flex
+        onClick={() => handleTabClick("bookmarked")}
+        borderTop={activeTab === "bookmarked" ? "2px solid white" : "none"}
+        alignItems={"center"}
+        p="3"
+        gap={1}
+        cursor={"pointer"}
+      >
         <Box fontSize={20}>
           <BsBookmark />
         </Box>
         <Text fontSize={12} display={{ base: "none", sm: "block" }}>
           Saved
-        </Text>
-      </Flex>
-
-      <Flex alignItems={"center"} p="3" gap={1} cursor={"pointer"}>
-        <Box fontSize={20}>
-          <FaMapPin fontWeight={"bold"} />
-        </Box>
-        <Text fontSize={12} display={{ base: "none", sm: "block" }}>
-          Maps
         </Text>
       </Flex>
     </Flex>
