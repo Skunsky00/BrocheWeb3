@@ -1,14 +1,11 @@
-// useLikePost.js
 import { useState, useEffect } from "react";
 import {
   doc,
-  updateDoc,
   getDoc,
   deleteDoc,
   setDoc,
   collection,
-  addDoc,
-  onSnapshot, // Add this import
+  onSnapshot,
 } from "firebase/firestore";
 import { firestore } from "../firebase/firebase";
 import useAuthStore from "../store/authStore";
@@ -21,12 +18,13 @@ const useLikePost = (postId) => {
   const [didLike, setDidLike] = useState(false);
   const authUser = useAuthStore((state) => state.user);
   const showToast = useShowToast();
-  const { updatePostCollection, isUpdating: isUpdatingPostCollection } =
-    useUpdatePostCollection(postId);
-
-  const postStore = usePostStore((state) => state.posts);
+  const { updatePostCollection } = useUpdatePostCollection(postId);
+  // Get both posts and feedPosts from the store
+  const posts = usePostStore((state) => state.posts);
+  const feedPosts = usePostStore((state) => state.feedPosts);
   const updatePostStore = usePostStore((state) => state.updatePost);
 
+  // Real-time listener for likes
   useEffect(() => {
     if (!postId) return;
 
@@ -35,51 +33,36 @@ const useLikePost = (postId) => {
       `posts/${postId}/post-likes`
     );
     const unsubscribeLikes = onSnapshot(likesCollectionRef, (snapshot) => {
-      const likesCount = snapshot.size;
-      const currentPost = postStore.find((post) => post.id === postId);
-      if (currentPost) {
-        updatePostStore({ ...currentPost, likes: likesCount });
-      }
+      const likesCount = snapshot.size; // Real-time count
+
+      // Use the updater function to update the like count across all arrays.
+      updatePostStore((prevPosts) => {
+        return prevPosts.map((post) =>
+          post.id === postId ? { ...post, likes: likesCount } : post
+        );
+      });
     });
+
     return () => unsubscribeLikes();
   }, [postId]);
+
+  useEffect(() => {
+    if (!authUser || !postId) return;
+    checkIfUserLikedPost();
+  }, [authUser, postId]);
 
   const checkIfUserLikedPost = async () => {
     try {
       const userId = authUser?.id;
+      if (!userId || !postId) return;
 
-      if (userId && postId) {
-        const postRef = doc(firestore, "posts", postId);
-
-        onSnapshot(postRef, (doc) => {
-          const currentLikes = doc.data().likes || 0;
-          const updatedPost = {
-            ...postStore.find((post) => post.id === postId),
-            likes: currentLikes,
-          };
-          updatePostStore(updatedPost);
-        });
-
-        const postLikesCollection = doc(
-          firestore,
-          `posts/${postId}/post-likes`,
-          userId
-        );
-        const postLikesDoc = await getDoc(postLikesCollection);
-        const userLikedPost = postLikesDoc.exists();
-
-        setDidLike(userLikedPost);
-      }
+      const postLikesDoc = doc(firestore, `posts/${postId}/post-likes`, userId);
+      const postLikesSnapshot = await getDoc(postLikesDoc);
+      setDidLike(postLikesSnapshot.exists());
     } catch (error) {
       showToast("Error", error.message, "error");
     }
   };
-
-  useEffect(() => {
-    if (authUser && postId) {
-      checkIfUserLikedPost();
-    }
-  }, [authUser, postId]);
 
   const likePost = async () => {
     if (isUpdating) return;
@@ -89,16 +72,26 @@ const useLikePost = (postId) => {
       const userId = authUser?.id;
       if (!userId || !postId) return;
 
-      // Get current likes count
-      const currentPost = postStore.find((post) => post.id === postId);
-      const currentLikes = currentPost?.likes ?? 0;
+      const postLikesDoc = doc(firestore, `posts/${postId}/post-likes`, userId);
+      const userLikesDoc = doc(firestore, `users/${userId}/user-likes`, postId);
 
-      // Optimistically update local state
+      // Try to find the post from either posts or feedPosts
+      const currentPost =
+        posts.find((post) => post.id === postId) ||
+        feedPosts.find((post) => post.id === postId);
+
+      // If the post is not found, you might want to handle that case.
+      if (!currentPost) {
+        console.warn("Post not found in any slice");
+        return;
+      }
+
+      const currentLikes = currentPost?.likes ?? 0;
+      // Optimistically update the like count
       updatePostStore({ ...currentPost, likes: currentLikes + 1 });
 
-      // Firestore update
-      const postLikesDoc = doc(firestore, `posts/${postId}/post-likes`, userId);
       await setDoc(postLikesDoc, {});
+      await setDoc(userLikesDoc, {});
 
       setDidLike(true);
       updatePostCollection();
@@ -117,16 +110,24 @@ const useLikePost = (postId) => {
       const userId = authUser?.id;
       if (!userId || !postId) return;
 
-      // Get current likes count
-      const currentPost = postStore.find((post) => post.id === postId);
-      const currentLikes = currentPost?.likes ?? 0;
+      const postLikesDoc = doc(firestore, `posts/${postId}/post-likes`, userId);
+      const userLikesDoc = doc(firestore, `users/${userId}/user-likes`, postId);
 
-      // Optimistically update local state
+      // Look in both slices for the current post
+      const currentPost =
+        posts.find((post) => post.id === postId) ||
+        feedPosts.find((post) => post.id === postId);
+
+      if (!currentPost) {
+        console.warn("Post not found in any slice");
+        return;
+      }
+
+      const currentLikes = currentPost?.likes ?? 0;
       updatePostStore({ ...currentPost, likes: Math.max(currentLikes - 1, 0) });
 
-      // Firestore update
-      const postLikesDoc = doc(firestore, `posts/${postId}/post-likes`, userId);
       await deleteDoc(postLikesDoc);
+      await deleteDoc(userLikesDoc);
 
       setDidLike(false);
     } catch (error) {

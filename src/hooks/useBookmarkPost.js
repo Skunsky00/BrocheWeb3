@@ -16,23 +16,15 @@ const useBookmarkPost = (postId) => {
   const checkIfUserBookmarkedPost = async () => {
     try {
       const userId = authUser?.id;
-      if (userId && postId) {
-        const postRef = doc(firestore, "posts", postId);
-        onSnapshot(postRef, (doc) => {
-          const updatedPost = {
-            ...postStore.find((post) => post.id === postId),
-          };
-          updatePostStore(updatedPost);
-        });
+      if (!userId || !postId) return;
 
-        const postBookmarksDoc = doc(
-          firestore,
-          `posts/${postId}/post-bookmarks`,
-          userId
-        );
-        const bookmarkDoc = await getDoc(postBookmarksDoc);
-        setDidBookmark(bookmarkDoc.exists());
-      }
+      const postBookmarksDoc = doc(
+        firestore,
+        `users/${userId}/user-bookmarks`,
+        postId
+      );
+      const bookmarkDoc = await getDoc(postBookmarksDoc);
+      setDidBookmark(bookmarkDoc.exists());
     } catch (error) {
       showToast("Error", error.message, "error");
     }
@@ -52,10 +44,12 @@ const useBookmarkPost = (postId) => {
       const userId = authUser?.id;
       if (!userId || !postId) return;
 
-      await setDoc(
-        doc(firestore, `posts/${postId}/post-bookmarks`, userId),
-        {}
-      );
+      // Add bookmark to both post's subcollection and user's subcollection
+      await Promise.all([
+        setDoc(doc(firestore, `posts/${postId}/post-bookmarks`, userId), {}),
+        setDoc(doc(firestore, `users/${userId}/user-bookmarks`, postId), {}),
+      ]);
+
       setDidBookmark(true);
     } catch (error) {
       showToast("Error", error.message, "error");
@@ -72,7 +66,12 @@ const useBookmarkPost = (postId) => {
       const userId = authUser?.id;
       if (!userId || !postId) return;
 
-      await deleteDoc(doc(firestore, `posts/${postId}/post-bookmarks`, userId));
+      // Remove bookmark from both post's subcollection and user's subcollection
+      await Promise.all([
+        deleteDoc(doc(firestore, `posts/${postId}/post-bookmarks`, userId)),
+        deleteDoc(doc(firestore, `users/${userId}/user-bookmarks`, postId)),
+      ]);
+
       setDidBookmark(false);
     } catch (error) {
       showToast("Error", error.message, "error");
