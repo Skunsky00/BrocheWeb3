@@ -33,10 +33,11 @@ const useEditProfile = () => {
 
       const updatedUser = {
         ...authUser,
-        fullname: inputs.fullname || authUser.fullname,
-        username: inputs.username || authUser.username,
-        bio: inputs.bio || authUser.bio,
+        fullname: inputs.fullname,
+        username: inputs.username,
+        bio: inputs.bio,
         profileImageUrl: URL || authUser.profileImageUrl,
+        link: inputs.link, // update link, which could be an empty string if cleared
       };
 
       await updateDoc(userDocRef, updatedUser);
@@ -46,6 +47,8 @@ const useEditProfile = () => {
       showToast("Success", "Profile updated successfully", "success");
     } catch (error) {
       showToast("Error", error.message, "error");
+    } finally {
+      setIsUpdating(false);
     }
   };
 

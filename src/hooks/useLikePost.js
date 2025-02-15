@@ -19,9 +19,11 @@ const useLikePost = (postId) => {
   const authUser = useAuthStore((state) => state.user);
   const showToast = useShowToast();
   const { updatePostCollection } = useUpdatePostCollection(postId);
-  // Get both posts and feedPosts from the store
+
+  // Get posts from all slices
   const posts = usePostStore((state) => state.posts);
   const feedPosts = usePostStore((state) => state.feedPosts);
+  const bookmarkedPosts = usePostStore((state) => state.bookmarkedPosts);
   const updatePostStore = usePostStore((state) => state.updatePost);
 
   // Real-time listener for likes
@@ -35,16 +37,14 @@ const useLikePost = (postId) => {
     const unsubscribeLikes = onSnapshot(likesCollectionRef, (snapshot) => {
       const likesCount = snapshot.size; // Real-time count
 
-      // Use the updater function to update the like count across all arrays.
-      updatePostStore((prevPosts) => {
-        return prevPosts.map((post) =>
-          post.id === postId ? { ...post, likes: likesCount } : post
-        );
-      });
+      // Update the like count across all arrays
+      updatePostStore((post) =>
+        post.id === postId ? { ...post, likes: likesCount } : post
+      );
     });
 
     return () => unsubscribeLikes();
-  }, [postId]);
+  }, [postId, updatePostStore]);
 
   useEffect(() => {
     if (!authUser || !postId) return;
@@ -75,12 +75,12 @@ const useLikePost = (postId) => {
       const postLikesDoc = doc(firestore, `posts/${postId}/post-likes`, userId);
       const userLikesDoc = doc(firestore, `users/${userId}/user-likes`, postId);
 
-      // Try to find the post from either posts or feedPosts
+      // Look for the post in all slices
       const currentPost =
         posts.find((post) => post.id === postId) ||
-        feedPosts.find((post) => post.id === postId);
+        feedPosts.find((post) => post.id === postId) ||
+        bookmarkedPosts.find((post) => post.id === postId);
 
-      // If the post is not found, you might want to handle that case.
       if (!currentPost) {
         console.warn("Post not found in any slice");
         return;
@@ -113,10 +113,11 @@ const useLikePost = (postId) => {
       const postLikesDoc = doc(firestore, `posts/${postId}/post-likes`, userId);
       const userLikesDoc = doc(firestore, `users/${userId}/user-likes`, postId);
 
-      // Look in both slices for the current post
+      // Look for the post in all slices
       const currentPost =
         posts.find((post) => post.id === postId) ||
-        feedPosts.find((post) => post.id === postId);
+        feedPosts.find((post) => post.id === postId) ||
+        bookmarkedPosts.find((post) => post.id === postId);
 
       if (!currentPost) {
         console.warn("Post not found in any slice");
@@ -124,7 +125,10 @@ const useLikePost = (postId) => {
       }
 
       const currentLikes = currentPost?.likes ?? 0;
-      updatePostStore({ ...currentPost, likes: Math.max(currentLikes - 1, 0) });
+      updatePostStore({
+        ...currentPost,
+        likes: Math.max(currentLikes - 1, 0),
+      });
 
       await deleteDoc(postLikesDoc);
       await deleteDoc(userLikesDoc);

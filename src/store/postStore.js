@@ -25,7 +25,13 @@ const usePostStore = create((set) => ({
           : postsOrUpdater,
     })),
 
-  setBookmarkedPosts: (bookmarkedPosts) => set({ bookmarkedPosts }),
+  setBookmarkedPosts: (bookmarkedPostsOrUpdater) =>
+    set((state) => ({
+      bookmarkedPosts:
+        typeof bookmarkedPostsOrUpdater === "function"
+          ? bookmarkedPostsOrUpdater(state.bookmarkedPosts)
+          : bookmarkedPostsOrUpdater,
+    })),
 
   setFeedPosts: (feedPostsOrUpdater) =>
     set((state) => {

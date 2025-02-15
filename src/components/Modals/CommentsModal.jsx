@@ -29,7 +29,10 @@ const CommentsModal = ({ isOpen, onClose, post }) => {
           `posts/${post.id}/post-comments`
         );
         const commentsSnapshot = await getDocs(commentsCollection);
-        const commentsData = commentsSnapshot.docs.map((doc) => doc.data());
+        const commentsData = commentsSnapshot.docs.map((doc) => ({
+          id: doc.id,
+          ...doc.data(),
+        }));
         setComments(commentsData);
       } catch (error) {
         console.error("Error fetching comments:", error.message);

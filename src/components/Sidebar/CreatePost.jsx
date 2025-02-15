@@ -1,30 +1,26 @@
+import React, { useState, useRef } from "react";
 import {
-  Box,
+  Modal,
+  ModalOverlay,
+  ModalContent,
+  ModalHeader,
+  ModalCloseButton,
+  ModalBody,
+  ModalFooter,
   Button,
-  CloseButton,
   Flex,
   Image,
-  Input,
-  Modal,
-  ModalBody,
-  ModalCloseButton,
-  ModalContent,
-  ModalFooter,
-  ModalHeader,
-  ModalOverlay,
   Textarea,
-  Tooltip,
+  Input,
+  CloseButton,
   useDisclosure,
+  Tooltip,
+  Box,
 } from "@chakra-ui/react";
-import { CreatePostLogo } from "../../Assets/constants";
 import { BsFillImageFill } from "react-icons/bs";
-import { useRef, useState } from "react";
-import usePreviewImg from "../../hooks/usePreviewImg";
-import useShowToast from "../../hooks/useShowToast";
-import useAuthStore from "../../store/authStore";
-import usePostStore from "../../store/postStore";
-import useUserProfileStore from "../../store/userProfileStore";
-import usePreviewMedia from "../../hooks/usePreviewMedia";
+import LocationInput from "../LocationInput/LocationInput";
+
+// Firebase imports
 import {
   addDoc,
   arrayUnion,
@@ -35,27 +31,54 @@ import {
 import { firestore, storage } from "../../firebase/firebase";
 import { getDownloadURL, ref, uploadString } from "firebase/storage";
 
+// Custom hooks and stores
+import useShowToast from "../../hooks/useShowToast";
+import useAuthStore from "../../store/authStore";
+import usePostStore from "../../store/postStore";
+import useUserProfileStore from "../../store/userProfileStore";
+import { CreatePostLogo } from "../../Assets/constants";
+
 const CreatePost = () => {
   const { isOpen, onOpen, onClose } = useDisclosure();
+  // Track which view is active: "media" or "details"
+  const [currentStep, setCurrentStep] = useState("media");
+  const [selectedFile, setSelectedFile] = useState(null);
   const [caption, setCaption] = useState("");
   const [location, setLocation] = useState("");
   const [label, setLabel] = useState("");
-  const imageRef = useRef(null);
-  const { handleMediaChange, selectedFile, setSelectedFile } =
-    usePreviewMedia();
-  const showToast = useShowToast();
+  const fileInputRef = useRef(null);
+
+  // Get post creation function and loading state from our custom hook
   const { isLoading, handleCreatePost } = useCreatePost();
 
-  const handlePostCreation = async () => {
+  // Handle file selection
+  const handleMediaChange = (e) => {
+    const file = e.target.files[0];
+    if (file) {
+      const reader = new FileReader();
+      reader.onload = (event) => {
+        setSelectedFile(event.target.result);
+      };
+      reader.readAsDataURL(file);
+    }
+  };
+
+  // Reset modal state on close
+  const handleModalClose = () => {
+    setCurrentStep("media");
+    setSelectedFile(null);
+    setCaption("");
+    setLocation("");
+    setLabel("");
+    onClose();
+  };
+
+  const onPost = async () => {
     try {
       await handleCreatePost(selectedFile, caption, location, label);
-      onClose();
-      setCaption("");
-      setLocation("");
-      setLabel("");
-      setSelectedFile(null);
+      handleModalClose();
     } catch (error) {
-      showToast("Error", error.message, "error");
+      console.error(error);
     }
   };
 
@@ -83,70 +106,82 @@ const CreatePost = () => {
           <Box display={{ base: "none", md: "block" }}>Create</Box>
         </Flex>
       </Tooltip>
-      <Modal isOpen={isOpen} onClose={onClose} size="xl">
+      <Modal isOpen={isOpen} onClose={handleModalClose} size="xl">
         <ModalOverlay />
-
-        <ModalContent bg={"black"} border={"1px solid gray"}>
-          <ModalHeader>Create Post</ModalHeader>
+        <ModalContent bg="black" border="1px solid gray">
+          <ModalHeader>
+            {currentStep === "media" ? "Select Media" : "Add Post Details"}
+          </ModalHeader>
           <ModalCloseButton />
           <ModalBody pb={6}>
-            <Textarea
-              placeholder="Post caption..."
-              value={caption}
-              onChange={(e) => setCaption(e.target.value)}
-            />
-            <Textarea
-              placeholder="Post location."
-              value={location}
-              onChange={(e) => setLocation(e.target.value)}
-            />
-            <Textarea
-              placeholder="Post label."
-              value={label}
-              onChange={(e) => setLabel(e.target.value)}
-            />
-
-            <Input
-              type="file"
-              accept="image/*, video/*" // Allow both image and video files
-              hidden
-              ref={imageRef}
-              onChange={handleMediaChange}
-            />
-
-            <BsFillImageFill
-              onClick={() => imageRef.current.click()}
-              style={{
-                marginTop: "15px",
-                marginLeft: "5px",
-                cursor: "pointer",
-              }}
-              size={16}
-            />
-            {selectedFile && (
-              <Flex
-                mt={5}
-                w={"full"}
-                position={"relative"}
-                justifyContent={"center"}
-              >
-                <Image src={selectedFile} alt="Selected img" />
-                <CloseButton
-                  position={"absolute"}
-                  top={2}
-                  right={2}
-                  onClick={() => {
-                    setSelectedFile(null);
-                  }}
+            {currentStep === "media" ? (
+              <Flex direction="column" align="center">
+                <input
+                  type="file"
+                  accept="image/*, video/*"
+                  hidden
+                  ref={fileInputRef}
+                  onChange={handleMediaChange}
                 />
+                <BsFillImageFill
+                  onClick={() => fileInputRef.current.click()}
+                  style={{
+                    marginTop: "15px",
+                    cursor: "pointer",
+                  }}
+                  size={30}
+                />
+                {selectedFile && (
+                  <Flex mt={5} position="relative">
+                    <Image
+                      src={selectedFile}
+                      alt="Selected media"
+                      boxSize="200px"
+                    />
+                    <CloseButton
+                      position="absolute"
+                      top={0}
+                      right={0}
+                      onClick={() => setSelectedFile(null)}
+                    />
+                  </Flex>
+                )}
               </Flex>
+            ) : (
+              <>
+                <Textarea
+                  placeholder="Post caption..."
+                  value={caption}
+                  onChange={(e) => setCaption(e.target.value)}
+                  mb={3}
+                />
+                <LocationInput
+                  value={location}
+                  onChange={setLocation}
+                  placeholder="Enter post location..."
+                />
+                <Textarea
+                  placeholder="Post label..."
+                  value={label}
+                  onChange={(e) => setLabel(e.target.value)}
+                />
+              </>
             )}
           </ModalBody>
-
           <ModalFooter>
-            <Button mr={3} onClick={handlePostCreation} isLoading={isLoading}>
-              Post
-            </Button>
+            {currentStep === "media" ? (
+              <Button
+                mr={3}
+                onClick={() => setCurrentStep("details")}
+                disabled={!selectedFile}
+              >
+                Next
+              </Button>
+            ) : (
+              <Button mr={3} onClick={onPost} isLoading={isLoading}>
+                Post
+              </Button>
+            )}
           </ModalFooter>
         </ModalContent>
       </Modal>
@@ -161,9 +196,7 @@ function useCreatePost() {
   const [isLoading, setIsLoading] = useState(false);
   const authUser = useAuthStore((state) => state.user);
   const createPost = usePostStore((state) => state.createPost);
-  //const addPost = useUserProfileStore((state) => state.addPost);
   const userProfile = useUserProfileStore((state) => state.userProfile);
-  // const { pathname } = useLocation();
 
   const handleCreatePost = async (selectedFile, caption, location, label) => {
     if (isLoading || !authUser) return;
@@ -176,9 +209,9 @@ function useCreatePost() {
 
       // Create a new post document without ID
       const newPost = {
-        caption: caption,
-        location: location,
-        label: label,
+        caption,
+        location,
+        label,
         likes: 0,
         comments: 0,
         timestamp: new Date(),
@@ -214,21 +247,16 @@ function useCreatePost() {
       }
 
       const updateData = {};
-
-      if (newPost.imageUrl !== undefined) {
+      if (newPost.imageUrl !== undefined)
         updateData.imageUrl = newPost.imageUrl;
-      }
-
-      if (newPost.videoUrl !== undefined) {
+      if (newPost.videoUrl !== undefined)
         updateData.videoUrl = newPost.videoUrl;
-      }
 
-      // Ensure that at least one of the fields is defined before updating the document
+      // Update the post document with media URL if available
       if (Object.keys(updateData).length > 0) {
         await updateDoc(postDocRef, updateData);
       }
 
-      // Log the download URL and newPost object
       console.log("Download URL:", downloadURL);
       console.log("newPost:", newPost);
 

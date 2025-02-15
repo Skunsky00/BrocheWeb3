@@ -6,6 +6,23 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <meta name="referrer" content="no-referrer" />
     <title>Broche</title>
+
+    <!-- Google Maps API Script
+    <script
+      src="https://maps.googleapis.com/maps/api/js?key=AIzaSyDLjaqx_NDPIbA5KTVU8jWvrrK-6clAcXI&libraries=places"
+      async
+      defer
+    ></script> -->
+
+    <script
+      async
+      src="https://maps.googleapis.com/maps/api/js?key=AIzaSyDLjaqx_NDPIbA5KTVU8jWvrrK-6clAcXI&libraries=places&callback=initMap"
+    ></script>
+    <script>
+      function initMap() {
+        console.log("Google Maps API loaded successfully.");
+      }
+    </script>
   </head>
   <body>
     <div id="root"></div>

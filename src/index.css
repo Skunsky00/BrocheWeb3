@@ -13,3 +13,23 @@
 ::-webkit-scrollbar-thumb:hover {
   background: #555;
 }
+
+.pac-container {
+  z-index: 10000 !important;
+}
+
+.pac-container {
+  background-color: #333 !important;
+  border: none !important;
+  border-radius: 4px !important;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2) !important;
+}
+
+.pac-item {
+  color: #fff !important;
+  padding: 8px 12px !important;
+}
+
+.pac-item:hover {
+  background-color: #444 !important;
+}

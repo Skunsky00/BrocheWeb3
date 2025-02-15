@@ -25,6 +25,7 @@ const Sidebar = () => {
           pl={2}
           display={{ base: "none", md: "block" }}
           cursor="pointer"
+          w="120px"
         >
           <BrocheLogo />
         </Link>
