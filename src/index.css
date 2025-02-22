@@ -33,3 +33,17 @@
 .pac-item:hover {
   background-color: #444 !important;
 }
+
+.splash-container {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  height: 100vh;
+  width: 100vw;
+  background-color: black; /* Change this to match your app */
+  transition: opacity 0.5s ease-in-out;
+}
+
+.fade-out {
+  opacity: 0;
+}
